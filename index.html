@@ -100,10 +100,9 @@
 
 <!-- 모바일 전용 버튼 -->
 <div id="mobileCtrl">
-  <button class="mBtn" id="mLeft"  ontouchstart="keys['ArrowLeft']=true"  ontouchend="keys['ArrowLeft']=false"  onmousedown="keys['ArrowLeft']=true"  onmouseup="keys['ArrowLeft']=false">◀</button>
-  <button class="mBtn" id="mLaser" ontouchstart="shootLaser()" onmousedown="shootLaser()">⚡</button>
-  <button class="mBtn" id="mSpeed" ontouchstart="toggleSpeed()" onmousedown="toggleSpeed()">⚡SPD</button>
-  <button class="mBtn" id="mRight" ontouchstart="keys['ArrowRight']=true" ontouchend="keys['ArrowRight']=false" onmousedown="keys['ArrowRight']=true" onmouseup="keys['ArrowRight']=false">▶</button>
+  <button class="mBtn" id="mLeft">◀</button>
+  <button class="mBtn" id="mLaser">⚡</button>
+  <button class="mBtn" id="mRight">▶</button>
 </div>
 
 <div id="legend">
@@ -326,7 +325,23 @@ canvas.addEventListener('touchmove',e=>{
 
 canvas.addEventListener('touchend',e=>{e.preventDefault();},{passive:false});
 
-// 모바일 버튼 키 리셋 보호 (손가락 화면 밖 이탈 시)
+// 모바일 버튼 — preventDefault로 합성 마우스 이벤트 차단 (double-fire 방지)
+function bindMobileBtn(id, onDown, onUp){
+  const el=document.getElementById(id);
+  if(!el)return;
+  const down=e=>{e.preventDefault();if(onDown)onDown();};
+  const up  =e=>{e.preventDefault();if(onUp)onUp();};
+  el.addEventListener('touchstart', down, {passive:false});
+  el.addEventListener('touchend',   up,   {passive:false});
+  el.addEventListener('touchcancel',up,   {passive:false});
+  // 데스크톱 폴백
+  el.addEventListener('mousedown', e=>{if(onDown)onDown();});
+  el.addEventListener('mouseup',   e=>{if(onUp)onUp();});
+}
+bindMobileBtn('mLeft',  ()=>keys['ArrowLeft']=true,  ()=>keys['ArrowLeft']=false);
+bindMobileBtn('mRight', ()=>keys['ArrowRight']=true, ()=>keys['ArrowRight']=false);
+bindMobileBtn('mLaser', ()=>shootLaser(), null);
+
 document.addEventListener('touchcancel',()=>{keys['ArrowLeft']=false;keys['ArrowRight']=false;});
 
 // ═══════════════════════════════════════════
@@ -630,7 +645,6 @@ function drawOverlay(title,line1,line2=''){
 function toggleSpeed(){
   speedMode=!speedMode;
   document.getElementById('speedBtn').classList.toggle('on',speedMode);
-  document.getElementById('mSpeed').classList.toggle('on',speedMode);
 }
 
 // ═══════════════════════════════════════════
