@@ -41,8 +41,9 @@
       display:block;width:100%;
       border:2px solid #1a1a2e;border-radius:8px;
       box-shadow:0 0 40px rgba(77,150,255,.2);
-      cursor:none;touch-action:none;
+      cursor:default;touch-action:none;
     }
+    canvas.playing{ cursor:none; }
 
     #sub{margin-top:6px;font-size:.72rem;color:#444;letter-spacing:1px;text-align:center;}
     #legend{
@@ -391,13 +392,16 @@ document.addEventListener('touchcancel',()=>{keys['ArrowLeft']=false;keys['Arrow
 // ═══════════════════════════════════════════
 //  RESET
 // ═══════════════════════════════════════════
+function setCursor(state){
+  canvas.classList.toggle('playing', state==='playing');
+}
 function startGame(mode){
   gameMode=mode;
   score=0;lives=2;level=1;combo=0;maxCombo=0;laserAmmo=0;shieldActive=false;comboFlash=0;
   paddle.w=paddle.baseW;paddle.x=W/2-paddle.baseW/2;
   balls=[makeBall()];bricks=[];items=[];particles=[];lasers=[];
   effects.forEach(e=>clearTimeout(e.timer));effects=[];
-  initBricks(1);gameState='playing';updateHUD();
+  initBricks(1);gameState='playing';setCursor('playing');updateHUD();
 }
 // 하위 호환
 function resetGame(){ startGame(gameMode||'score'); }
@@ -487,7 +491,7 @@ function update(dt){
   for(let i=dead.length-1;i>=0;i--)balls.splice(dead[i],1);
   if(balls.length===0){
     lives--;combo=0;updateHUD();doShake(22,9);SFX.life();
-    if(lives<=0){gameState='gameover';SFX.gameover();return;}
+    if(lives<=0){gameState='gameover';setCursor('gameover');SFX.gameover();return;}
     shieldActive=false;balls=[makeBall()];
   }
 
@@ -525,7 +529,7 @@ function update(dt){
   if(bricks.every(b=>!b.alive)){
     level++;combo=0;
     // 점수 모드: 5레벨 클리어 시 승리 / 무한 모드: 계속
-    if(gameMode==='score'&&level>5){gameState='win';SFX.win();return;}
+    if(gameMode==='score'&&level>5){gameState='win';setCursor('win');SFX.win();return;}
     SFX.levelup();
     balls=[makeBall()];
     paddle.w=Math.max(58,paddle.baseW-(Math.min(level-1,8))*5);
