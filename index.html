@@ -415,7 +415,8 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('keyup',e=>{keys[e.code]=false;});
 
 // 마우스 (스케일 보정 포함)
-canvas.addEventListener('mousemove',e=>{
+document.addEventListener('mousemove',e=>{
+  if(gameState!=='playing')return;
   paddle.x=Math.max(0,Math.min(W-paddle.w,toCanvasX(e.clientX)-paddle.w/2));
 });
 canvas.addEventListener('click',e=>{
