@@ -197,7 +197,10 @@ let comboFlash=0;
 const isMobile=()=>navigator.maxTouchPoints>0;
 
 const paddle={x:0,y:H-32,w:90,h:12,baseW:90,speed:9};
-function baseSpd(){ return (3.0+level*0.38)*(speedMode?1.65*1.5:1.65); }
+function baseSpd(){
+  const inc=gameMode==='infinite'?0.55:0.38;
+  return (3.0+level*inc)*(speedMode?1.65*1.5:1.65);
+}
 function makeBall(x,y,aOff=0){
   const spd=baseSpd(),a=-Math.PI/2+aOff;
   return {x:x||W/2,y:y||H-58,r:8,dx:Math.cos(a)*spd,dy:Math.sin(a)*spd,fire:false,trail:[]};
