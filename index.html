@@ -372,16 +372,16 @@ function hitRC(rx,ry,rw,rh,cx,cy,cr){
 }
 
 // ═══════════════════════════════════════════
-//  UPDATE
+//  UPDATE  (dt = 60fps 기준 정규화 델타)
 // ═══════════════════════════════════════════
-function update(){
+function update(dt){
   if(gameState!=='playing')return;
-  if(shake.dur>0){shake.x=(Math.random()-.5)*shake.intensity;shake.y=(Math.random()-.5)*shake.intensity;shake.dur--;}
+  if(shake.dur>0){shake.x=(Math.random()-.5)*shake.intensity;shake.y=(Math.random()-.5)*shake.intensity;shake.dur-=dt;}
   else{shake.x=0;shake.y=0;}
-  if(comboFlash>0)comboFlash--;
+  if(comboFlash>0)comboFlash-=dt;
 
-  if(keys['ArrowLeft']) paddle.x=Math.max(0,paddle.x-paddle.speed);
-  if(keys['ArrowRight'])paddle.x=Math.min(W-paddle.w,paddle.x+paddle.speed);
+  if(keys['ArrowLeft']) paddle.x=Math.max(0,paddle.x-paddle.speed*dt);
+  if(keys['ArrowRight'])paddle.x=Math.min(W-paddle.w,paddle.x+paddle.speed*dt);
 
   const dead=[];
   for(let bi=0;bi<balls.length;bi++){
@@ -390,7 +390,7 @@ function update(){
     if(b.trail.length>9)b.trail.shift();
     const ts=baseSpd(),cs=Math.hypot(b.dx,b.dy);
     if(cs>0.5&&Math.abs(cs-ts)>0.9){b.dx=b.dx/cs*ts;b.dy=b.dy/cs*ts;}
-    b.x+=b.dx;b.y+=b.dy;
+    b.x+=b.dx*dt;b.y+=b.dy*dt;
 
     if(b.x-b.r<0){b.x=b.r;b.dx=Math.abs(b.dx);SFX.wall();}
     if(b.x+b.r>W){b.x=W-b.r;b.dx=-Math.abs(b.dx);SFX.wall();}
@@ -445,7 +445,7 @@ function update(){
   }
 
   for(let i=lasers.length-1;i>=0;i--){
-    const l=lasers[i];l.y-=14;let hit=false;
+    const l=lasers[i];l.y-=14*dt;let hit=false;
     for(const br of bricks){
       if(!br.alive||l.x<br.x||l.x>br.x+br.w||l.y>br.y+br.h||l.y<br.y-14)continue;
       br.hp--;br.flash=6;
@@ -461,7 +461,7 @@ function update(){
   }
 
   for(let i=items.length-1;i>=0;i--){
-    const it=items[i];it.y+=it.dy;
+    const it=items[i];it.y+=it.dy*dt;
     if(it.y+12>paddle.y&&it.y-12<paddle.y+paddle.h&&it.x>paddle.x&&it.x<paddle.x+paddle.w){
       applyItem(it.type);burst(it.x,it.y,it.type.color,10);items.splice(i,1);continue;
     }
@@ -470,10 +470,10 @@ function update(){
 
   particles=particles.filter(p=>p.life>0.01);
   for(const p of particles){
-    if(p.wave){p.r+=3.5;p.life-=0.055;continue;}
-    p.x+=p.dx;p.y+=p.dy;p.dy+=0.1;p.life-=0.028;p.r*=0.97;
+    if(p.wave){p.r+=3.5*dt;p.life-=0.055*dt;continue;}
+    p.x+=p.dx*dt;p.y+=p.dy*dt;p.dy+=0.1*dt;p.life-=0.028*dt;p.r*=Math.pow(0.97,dt);
   }
-  for(const br of bricks){if(br.shake>0)br.shake--;if(br.flash>0)br.flash--;}
+  for(const br of bricks){if(br.shake>0)br.shake-=dt;if(br.flash>0)br.flash-=dt;}
 
   if(bricks.every(b=>!b.alive)){
     level++;combo=0;
@@ -654,7 +654,13 @@ score=0;lives=2;level=1;combo=0;maxCombo=0;laserAmmo=0;shieldActive=false;comboF
 paddle.x=W/2-paddle.baseW/2;
 balls=[makeBall()];bricks=[];items=[];particles=[];lasers=[];effects=[];
 initBricks(1);updateHUD();
-(function loop(){update();draw();requestAnimationFrame(loop);})();
+let _lastTs=0;
+(function loop(ts=0){
+  // dt: 60fps 기준 정규화 (120fps → dt≈0.5, 60fps → dt≈1, 탭 비활성 복귀 시 최대 3으로 클램프)
+  const dt=Math.min((ts-_lastTs)/( 1000/60),3);
+  _lastTs=ts;
+  update(dt);draw();requestAnimationFrame(loop);
+})();
 </script>
 </body>
 </html>
